@@ -1,0 +1,16 @@
+.header-container {
+    position: relative;
+    background: url('./background.svg') no-repeat center center;
+    background-size: cover;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  @media (max-width: 768px) {
+    .header-container { 
+      background-position: center center;
+      background-size: cover;
+    }
+  }

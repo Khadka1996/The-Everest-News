@@ -1,0 +1,42 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /private/
+Disallow: /*.json$
+Disallow: /login
+Disallow: /signup
+
+# Allow crawling of search parameters
+Allow: /?*
+
+# Sitemaps
+Sitemap: https://theeverestnews.com/sitemap.xml
+Sitemap: https://theeverestnews.com/news-sitemap.xml
+
+# Google-specific directives
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing-specific directives
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Other search engines
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /

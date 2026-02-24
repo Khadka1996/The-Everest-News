@@ -1,0 +1,38 @@
+{
+  "name": "The Everest News",
+  "short_name": "EverestNews",
+  "description": "नेपालको ताजा समाचार, पर्यटन, अर्थतन्त्र, उड्डयन, खेलकुद र राजनीतिक अपडेट। एभरेस्ट क्षेत्रको विश्वसनीय समाचार स्रोत।",
+  "lang": "ne-NP",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#25609A",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/safari-pinned-tab.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["news", "media"],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
