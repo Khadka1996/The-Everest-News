@@ -1,4 +1,4 @@
 // config.js
-const API_URL = "http://localhost:5000";
+const API_URL = "https://potal.theeverestnews.com";
 
 export default API_URL;
