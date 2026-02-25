@@ -16,7 +16,7 @@ export async function generateMetadata({ params }) {
 
   // Fetch article data from API for server-side metadata generation
   try {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://potal.theeverestnews.com/';
     const articleResponse = await fetch(`${API_URL}/api/articles/${id}`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });

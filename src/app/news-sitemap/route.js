@@ -8,7 +8,7 @@
 
 export async function GET() {
   try {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://potal.theeverestnews.com/';
     
     // Fetch recent articles from the last 7 days
     const response = await fetch(
