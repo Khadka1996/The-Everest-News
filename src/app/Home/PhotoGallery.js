@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FaClock, FaPhotoVideo } from 'react-icons/fa';
 import API_URL from '../config';
 
-const ARTICLES_API = `${API_URL}/api/articles/category/फोटोग्यालरी/status/published `;
+const ARTICLES_API = `${API_URL}/api/articles/category/फोटोग्यालरी/status/published`;
 const AUTHORS_API = `${API_URL}/api/authors`;
 const AUTHOR_IMAGE_BASE_URL = `${API_URL}/uploads/authors/`;
 const ARTICLE_IMAGE_BASE_URL = `${API_URL}/uploads/articles/`;const ARTICLES_LIMIT = 4;

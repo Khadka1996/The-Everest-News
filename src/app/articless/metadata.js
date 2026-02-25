@@ -16,7 +16,7 @@ export async function generateMetadata({ params }) {
 
   // Fetch article data from API for server-side metadata generation
   try {
-    const API_URL = 'https://potal.theeverestnews.com/';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/';
     const articleResponse = await fetch(`${API_URL}/api/articles/${id}`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }) {
     const primaryImage = photos?.[0] || 'https://theeverestnews.com/logo.png';
     const imageUrl = primaryImage.startsWith('http') 
       ? primaryImage 
-      : `https://potal.theeverestnews.com/uploads/articles/${primaryImage}`;
+      : `${process.env.NEXT_PUBLIC_API_URL}/uploads/articles/${primaryImage}`;
 
     const articleUrl = `https://theeverestnews.com/articless/${_id}`;
     const authorsArray = Array.isArray(authors) ? authors : [];
@@ -140,7 +140,7 @@ export async function generateMetadata({ params }) {
             "image": author.photo ? 
               (author.photo.startsWith('http') 
                 ? author.photo 
-                : `https://potal.theeverestnews.com/uploads/authors/${author.photo}`)
+                : `${process.env.NEXT_PUBLIC_API_URL}/uploads/authors/${author.photo}`)
               : undefined
           })).filter(a => a.name !== "Unknown Author") : [{
             "@type": "Organization",

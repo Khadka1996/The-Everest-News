@@ -43,10 +43,10 @@ const ReadMore = ({ onClose, currentArticleId, currentCategory, currentTags }) =
         try {
           console.log(`📁 Fetching articles from category: ${currentCategory}`);
           const categoryResponse = await axios.get(
-            `${API_URL}/api/articles/category/${encodeURIComponent(currentCategory)}?page=${DEFAULT_PAGE}&limit=${DEFAULT_LIMIT}`
+            `${API_URL}/api/articles/category/${encodeURIComponent(currentCategory)}?page=${DEFAULT_PAGE}&limit=${DEFAULT_LIMIT * 2}`
           );
           articles = categoryResponse.data.data || [];
-          if (articles.length > 0) {
+          if (articles.length >= DEFAULT_LIMIT) {
             fetchedFrom = "category";
             console.log(`✅ Found ${articles.length} articles from category`);
           }
@@ -56,39 +56,41 @@ const ReadMore = ({ onClose, currentArticleId, currentCategory, currentTags }) =
       }
 
       // ===== STRATEGY 2: Try TAGS if category didn't return enough (alternative) =====
-      if (articles.length === 0 && currentTags && currentTags.length > 0) {
+      if (articles.length < DEFAULT_LIMIT && currentTags && currentTags.length > 0) {
         try {
           console.log(`🏷️ Fetching articles from tags`);
           // Try first tag
           const tagId = currentTags[0]._id || currentTags[0];
           const tagsResponse = await axios.get(
-            `${API_URL}/api/articles/tag/${tagId}/status/published?page=${DEFAULT_PAGE}&limit=${DEFAULT_LIMIT}`
+            `${API_URL}/api/articles/tag/${tagId}/status/published?page=${DEFAULT_PAGE}&limit=${DEFAULT_LIMIT * 2}`
           );
-          articles = tagsResponse.data.data || [];
-          if (articles.length > 0) {
-            fetchedFrom = "tags";
-            console.log(`✅ Found ${articles.length} articles from tags`);
+          const tagArticles = tagsResponse.data.data || [];
+          if (tagArticles.length > 0) {
+            articles = [...articles, ...tagArticles];
+            fetchedFrom = articles.length >= DEFAULT_LIMIT ? "tags" : "category+tags";
+            console.log(`✅ Found ${tagArticles.length} articles from tags`);
           }
         } catch (tagsError) {
           console.warn(`⚠️ Tags fetch failed (will use random):`, tagsError.message);
         }
       }
 
-      // ===== STRATEGY 3: Fallback to RANDOM published articles (if both failed) =====
-      if (articles.length === 0) {
+      // ===== STRATEGY 3: Fallback to ALL published articles (if both failed) =====
+      if (articles.length < DEFAULT_LIMIT) {
         try {
-          console.log(`🎲 Fetching random published articles (fallback)`);
+          console.log(`🎲 Fetching published articles (fallback)`);
           const fallbackResponse = await axios.get(
-            `${API_URL}/api/articles/status/published?page=${DEFAULT_PAGE}&limit=${DEFAULT_LIMIT}`
+            `${API_URL}/api/articles/status/published?page=${DEFAULT_PAGE}&limit=${DEFAULT_LIMIT * 3}`
           );
-          articles = fallbackResponse.data.data || [];
-          if (articles.length > 0) {
-            fetchedFrom = "random";
-            console.log(`✅ Found ${articles.length} random articles (fallback)`);
+          const fallbackArticles = fallbackResponse.data.data || [];
+          if (fallbackArticles.length > 0) {
+            articles = [...articles, ...fallbackArticles];
+            fetchedFrom = articles.length >= DEFAULT_LIMIT ? "published" : "mixed";
+            console.log(`✅ Found ${fallbackArticles.length} published articles`);
           }
         } catch (fallbackError) {
           console.error(`❌ All fetch strategies failed:`, fallbackError.message);
-          setError("Unable to load similar articles. Please try again later.");
+          setError("Unable to load articles. Please try again later.");
           setLatestArticles([]);
           setIsLoading(false);
           return;
@@ -100,19 +102,28 @@ const ReadMore = ({ onClose, currentArticleId, currentCategory, currentTags }) =
         throw new Error("Invalid articles format from API");
       }
 
+      // Remove duplicates and current article
+      const uniqueArticles = Array.from(
+        new Map(articles.map(article => [article._id, article])).values()
+      ).filter(article => article._id !== currentArticleId);
+
       // Sort by creation date (newest first)
-      const sortedArticles = articles.sort((a, b) => {
+      const sortedArticles = uniqueArticles.sort((a, b) => {
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
 
-      // Optimize and take exactly 12
-      const optimizedArticles = optimizeArticles(sortedArticles);
+      // Take exactly 12
+      const finalArticles = sortedArticles.slice(0, DEFAULT_LIMIT).map(article => ({
+        _id: article._id,
+        headline: article.headline,
+        photos: article.photos || [],
+      }));
       
-      console.log(`📊 ReadMore loaded: ${optimizedArticles.length} articles from [${fetchedFrom}]`);
-      setLatestArticles(optimizedArticles);
+      console.log(`📊 ReadMore loaded: ${finalArticles.length} articles from [${fetchedFrom}]`);
+      setLatestArticles(finalArticles);
     } catch (error) {
       console.error("Error fetching similar articles:", error);
-      setError("Error loading similar articles. Please try again later.");
+      setError("Error loading articles. Please try again later.");
       setLatestArticles([]);
     } finally {
       setIsLoading(false);
@@ -124,19 +135,19 @@ const ReadMore = ({ onClose, currentArticleId, currentCategory, currentTags }) =
   }, [currentArticleId, currentCategory, currentTags]);
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {latestArticles.length > 0 && (
-        <h2 className="text-2xl font-extrabold text-white bg-[#25609A] py-2 px-6 mb-8 w-full rounded-t-lg shadow-lg text-center md:hover:bg-[#7BB660] md:transition-all md:duration-300 md:ease-in-out">
+        <h2 className="text-3xl font-extrabold text-white bg-gradient-to-r from-[#25609A] to-[#1a3f5a] py-3 px-6 mb-6 rounded-lg shadow-md text-center">
           छुटाउनुभयो कि ?
         </h2>
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[...Array(4)].map((_, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[...Array(12)].map((_, index) => (
             <div
               key={index}
-              className="bg-gray-200 rounded-xl h-80 md:animate-pulse"
+              className="bg-gray-200 rounded-lg h-72 shadow-sm"
             ></div>
           ))}
         </div>
@@ -145,20 +156,21 @@ const ReadMore = ({ onClose, currentArticleId, currentCategory, currentTags }) =
           <p>{error}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {latestArticles.map((article, index) => (
             <div
               key={article._id}
-              className="bg-white rounded-xl overflow-hidden shadow-lg md:hover:shadow-2xl md:transition-all md:duration-300 cursor-pointer group"
+              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg cursor-pointer"
               onClick={() => handleArticleClick(article._id)}
             >
               <a href={`/article/${article._id}`} className="block h-full">
-                <div className="relative h-56 overflow-hidden">
+                <div className="relative h-52 overflow-hidden bg-gray-300">
                   {article.photos && article.photos.length > 0 ? (
                     <img
                       src={`${API_URL}/uploads/articles/${article.photos[0].split("/").pop()}`}
-                      alt={`Article ${index + 1}`}
-                      className="w-full h-full object-cover md:transition-transform md:duration-500 md:group-hover:scale-110"
+                      alt={article.headline}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <img
@@ -167,18 +179,11 @@ const ReadMore = ({ onClose, currentArticleId, currentCategory, currentTags }) =
                       className="w-full h-full object-cover"
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 md:group-hover:opacity-100 md:transition-opacity md:duration-300 flex items-end p-4">
-                    <span className="text-white font-medium text-sm">
-                      पूरा हेर्नुहोस्👉
-                    </span>
-                  </div>
                 </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-bold mb-2 line-clamp-2 text-gray-800 md:group-hover:text-blue-600 md:transition-colors">
+                <div className="p-3">
+                  <h3 className="text-base font-bold line-clamp-2 text-gray-800 mb-2 hover:text-[#25609A]">
                     {article.headline}
                   </h3>
-                  <div className="flex justify-between items-center text-sm text-gray-500">
-                  </div>
                 </div>
               </a>
             </div>

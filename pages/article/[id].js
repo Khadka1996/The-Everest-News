@@ -25,7 +25,7 @@ const ServerPage = ({ data, tags, authors }) => {
 
 
 
-  const imageUri = photos && photos.length > 0 ? `https://potal.theeverestnews.com/uploads/articles/${photos[0].split('/').pop()}` : '';
+  const imageUri = photos && photos.length > 0 ? `http://localhost:5000/uploads/articles/${photos[0].split('/').pop()}` : '';
 
   const stripHtmlTags = (html) => {
     return html.replace(/<[^>]+>/g, '');
@@ -66,7 +66,7 @@ const ServerPage = ({ data, tags, authors }) => {
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
   try {
-    const response = await axios.get(`https://potal.theeverestnews.com/api/articles/${id}`);
+    const response = await axios.get(`http://localhost:5000/api/articles/${id}`);
     const articleData = response.data.data || null;
 
     return {

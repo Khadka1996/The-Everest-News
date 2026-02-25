@@ -9,7 +9,7 @@ const ARTICLES_API = `${API_URL}/api/articles/category/पर्यटन/status
 const AUTHORS_API = `${API_URL}/api/authors`;
 const AUTHOR_IMAGE_BASE_URL = `${API_URL}/uploads/authors/`;
 const ARTICLE_IMAGE_BASE_URL = `${API_URL}/uploads/articles/`;
-const ARTICLES_LIMIT = 4;
+const ARTICLES_LIMIT = 6;
 const DEFAULT_PAGE = 1;
 
 // Format time difference outside component - no recreation on render

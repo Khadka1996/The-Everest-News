@@ -63,7 +63,7 @@ const ServerPage = ({ data, tags, authors}) => {
     window.open(shareUrls[platform], '_blank');
   };
 
-  const imageUri = photos && photos.length > 0 ? `https://potal.theeverestnews.com/uploads/articles/${photos[0].split('/').pop()}` : '';
+  const imageUri = photos && photos.length > 0 ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/articles/${photos[0].split('/').pop()}` : '';
 
   return (
     <>
@@ -144,9 +144,9 @@ export const getServerSideProps = async (context) => {
   const { id } = context.params;
   try {
     const [articleResponse, tagsResponse,authorsResponse] = await Promise.all([
-      axios.get(`https://potal.theeverestnews.com/api/articles/${id}`),
-      axios.get(`https://potal.theeverestnews.com/api/articles/${id}/tags`),
-      axios.get(`https://potal.theeverestnews.com/api/articles/${id}/authors`),
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/articles/${id}`),
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/articles/${id}/tags`),
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/articles/${id}/authors`),
 
     ]);
 

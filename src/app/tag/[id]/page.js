@@ -8,7 +8,6 @@ import BottomHeader from "@/app/Components/Header/BottomHeader";
 import FooterBottom from "@/app/Components/Footer/FooterBottom";
 import TrendingArticles from "@/app/Pages/TrendingPage";
 import API_URL from "@/app/config";
-import Loader from "@/app/articless/loader"; // Import the Loader component
 
 const TagPage = ({ params }) => {
   const { id } = params;
@@ -16,82 +15,84 @@ const TagPage = ({ params }) => {
   const [tagName, setTagName] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(false); // Loading state for page change
+  const [loading, setLoading] = useState(true);
   const articlesPerPage = 9;
 
-  const fetchArticles = async (page = currentPage) => {
-    setLoading(true); // Set loading true when fetching data
+  // Skeleton loader component
+  const SkeletonLoader = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {[...Array(9)].map((_, index) => (
+        <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+          <div className="w-full h-48 bg-gray-300"></div>
+          <div className="p-4">
+            <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const fetchArticles = async (page = 1) => {
+    setLoading(true);
     try {
+      // Decode the tag name from URL
+      const decodedTagName = decodeURIComponent(id);
       const res = await fetch(
-        `${API_URL}/api/articles/tag/${id}/status/published`
+        `${API_URL}/api/articles/tag/${decodedTagName}/status/published?page=${page}&limit=${articlesPerPage}`
       );
       const data = await res.json();
       if (data.success) {
-        setArticles(data.data);
-        setTotalCount(data.pagination.totalCount || 0);
+        // Sort articles by newest first
+        const sortedArticles = (data.data || []).sort((a, b) => {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        setArticles(sortedArticles);
+        setTotalCount(data.pagination?.totalCount || 0);
+        setCurrentPage(page);
+        // Set tag name from the decoded URL param
+        setTagName(decodedTagName);
       } else {
         console.error("Error fetching articles:", data.error);
+        setArticles([]);
       }
     } catch (error) {
       console.error("Error fetching articles:", error);
+      setArticles([]);
     } finally {
-      setLoading(false); // Set loading false once fetching is done
+      setLoading(false);
     }
   };
 
   const generatePageNumbers = () => {
-    const range = 2; // Number of pages to show before and after the current page
     const totalPages = totalCount ? Math.ceil(totalCount / articlesPerPage) : 1;
-    const currentPage = currentPage;
-  
+    const range = 2;
     let pageNumbers = [];
-  
-    // Show the first page
+
     if (currentPage - range > 1) {
       pageNumbers.push(1);
+      if (currentPage - range > 2) {
+        pageNumbers.push('...');
+      }
     }
-  
-    // Add the previous pages
-    for (let i = currentPage - range; i < currentPage; i++) {
-      if (i > 0) pageNumbers.push(i);
+
+    for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
+      pageNumbers.push(i);
     }
-  
-    // Add the current page
-    pageNumbers.push(currentPage);
-  
-    // Add the next pages
-    for (let i = currentPage + 1; i <= currentPage + range; i++) {
-      if (i <= totalPages) pageNumbers.push(i);
-    }
-  
-    // Show the last page
+
     if (currentPage + range < totalPages) {
+      if (currentPage + range < totalPages - 1) {
+        pageNumbers.push('...');
+      }
       pageNumbers.push(totalPages);
     }
-  
+
     return pageNumbers;
   };
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    fetchArticles(pageNumber); // Fetch new page data when page changes
-  };
-
-  const fetchTags = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/tags`);
-      const data = await res.json();
-      const tag = data.data.find((tag) => tag._id === id);
-      setTagName(tag ? tag.name : "Unknown");
-    } catch (error) {
-      console.error("Error fetching tags:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchArticles(); // Fetch articles initially
-    fetchTags(); // Fetch tag data initially
-  }, [id, currentPage]);
+    fetchArticles(currentPage);
+  }, [currentPage, id]);
 
   const totalPages = Math.ceil(totalCount / articlesPerPage);
 
@@ -99,6 +100,7 @@ const TagPage = ({ params }) => {
     const nepaliNumbers = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
     return num.toString().split('').map(digit => nepaliNumbers[parseInt(digit)]).join('');
   };
+
   const AdvertisementComponent = ({ position }) => {
     const [advertisements, setAdvertisements] = useState([]);
   
@@ -160,35 +162,36 @@ const TagPage = ({ params }) => {
      
       
       <div className="mx-3 md:mx-10 lg:mx-20">
-      <AdvertisementComponent position="nepali_top" />
+        <AdvertisementComponent position="nepali_top" />
+        
+        {!loading && <h1 className="text-3xl font-bold mb-6 text-[#25609A]">{tagName}</h1>}
+        
         {loading ? (
-          <Loader /> // Show loader while loading articles
-        ) : (
+          <SkeletonLoader />
+        ) : articles.length > 0 ? (
           <>
-            <h1 className="text-3xl font-semibold mb-4 text-[#7BB660]">
-              {tagName}
-            </h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               {articles.map((article) => (
                 <div
                   key={article._id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg hover:cursor-pointer transition-all"
                 >
                   <Link href={`/article/${article._id}`}>
                     <div className="block cursor-pointer">
-                      <img
-                        src={
-                          article.photos && article.photos.length > 0
-                            ? `${API_URL}/uploads/articles/${
-                                article.photos[0].split("/").pop()
-                              }`
-                            : "/placeholder.jpg"
-                        }
-                        alt={article.headline}
-                        className="w-full h-48 object-cover"
-                      />
+                      <div className="relative h-48 bg-gray-300 overflow-hidden">
+                        <img
+                          src={
+                            article.photos && article.photos.length > 0
+                              ? `${API_URL}/uploads/articles/${article.photos[0].split("/").pop()}`
+                              : "/placeholder.jpg"
+                          }
+                          alt={article.headline}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
                       <div className="p-4">
-                        <h2 className="text-lg font-semibold text-gray-800 hover:text-[#25609A]">
+                        <h2 className="text-base font-bold text-gray-800 hover:text-[#25609A] line-clamp-2">
                           {article.headline}
                         </h2>
                       </div>
@@ -197,22 +200,51 @@ const TagPage = ({ params }) => {
                 </div>
               ))}
             </div>
-            <div className="flex justify-center mt-6">
-              {[...Array(totalPages).keys()].map((pageNumber) => (
-                <span
-                  key={pageNumber}
-                  className={`mx-2 cursor-pointer text-lg ${currentPage === pageNumber + 1 ? 'font-bold' : ''}`}
-                  onClick={() => handlePageChange(pageNumber + 1)}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mb-8">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 rounded bg-[#25609A] text-white disabled:bg-gray-300 hover:bg-[#1a3f5a] transition"
                 >
-                  <span
-                    className={`inline-block rounded-full p-3 w-10 h-10 bg-[#25609A] border-2 border-grey-600 ${currentPage === pageNumber + 1 ? 'bg-[#7BB761]' : ''} flex items-center justify-center`}
-                  >
-                    {convertToNepaliNumber(pageNumber + 1)}
+                  पहिले
+                </button>
+
+                {generatePageNumbers().map((pageNumber, index) => (
+                  <span key={index}>
+                    {pageNumber === '...' ? (
+                      <span className="px-2">...</span>
+                    ) : (
+                      <button
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition ${
+                          currentPage === pageNumber
+                            ? 'bg-[#7BB660] text-white font-bold'
+                            : 'bg-[#25609A] text-white hover:bg-[#1a3f5a]'
+                        }`}
+                      >
+                        {convertToNepaliNumber(pageNumber)}
+                      </button>
+                    )}
                   </span>
-                </span>
-              ))}
-            </div>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 rounded bg-[#25609A] text-white disabled:bg-gray-300 hover:bg-[#1a3f5a] transition"
+                >
+                  पछि
+                </button>
+              </div>
+            )}
           </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600">यो ट्यागमा कोई लेख उपलब्ध छैन।</p>
+          </div>
         )}
 
         <div className="mb-6">

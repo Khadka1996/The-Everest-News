@@ -135,7 +135,16 @@ const ArticlePage = () => {
   
   const updateShareCount = async (platform) => {
     try {
+      // Send share count update to backend
       await axios.post(`${API_URL}/api/articles/update-share-count/${id}/share`, { platform });
+      
+      // Refetch article data from database to get updated shareCount
+      const articleResponse = await axios.get(`${API_URL}/api/articles/${id}`);
+      const updatedArticleData = articleResponse.data.data;
+      
+      if (updatedArticleData) {
+        setArticle(updatedArticleData);
+      }
     } catch (error) {
       console.error(`Error updating share count for ${platform}:`, error);
     }
@@ -206,6 +215,33 @@ AdvertisementComponent.displayName = 'AdvertisementComponent';
     const toNepaliNumber = (number) => number.toString().split('').map(digit => ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'][parseInt(digit, 10)]).join('');
 
     return `${toNepaliNumber(nepaliDate.getDate())} ${nepaliMonths[nepaliDate.getMonth()]} ${toNepaliNumber(nepaliDate.getYear())} (${nepaliDate.format('ddd')})`;
+  };
+
+  const renderContentWithAds = (content) => {
+    if (!content) return null;
+    
+    // Split content by paragraph closing tags to insert ads at different paragraphs
+    const paragraphTags = content.split('</p>');
+    const adPositions = { 2: 'nepali_incontent', 6: 'nepali_incontent_2', 8: 'nepali_incontent_3' };
+    
+    return (
+      <>
+        {paragraphTags.map((paragraph, index) => {
+          if (!paragraph.trim()) return null;
+          
+          return (
+            <React.Fragment key={index}>
+              <div dangerouslySetInnerHTML={{ __html: `${paragraph}</p>` }} />
+              {adPositions[index] && (
+                <div className="my-6">
+                  <AdvertisementComponent position={adPositions[index]} />
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </>
+    );
   };
 
   const imageUri = article && article.photos && article.photos.length > 0 ? `${API_URL}/uploads/articles/${article.photos[0].split('/').pop()}` : '';
@@ -332,21 +368,24 @@ AdvertisementComponent.displayName = 'AdvertisementComponent';
                 alt={article.headline}
               />
 
-              <div className="text-gray-800 my-4 font-medium text-xl " dangerouslySetInnerHTML={{ __html: article.content }} />
+              <div className="text-gray-800 my-4 font-medium text-xl">
+                {renderContentWithAds(article.content)}
+              </div>
+              
               {article.youtubeLink && (
                 <div className="mt-6">
                   <YouTube videoId={getYouTubeVideoId(article.youtubeLink)} className="w-full md:w-3/4 lg:w-1/2 mx-auto" />
                 </div>
               )}
-              {tags && (
+              {tags && tags.length > 0 && (
                 <div className="flex flex-wrap justify-center mt-4">
                   {tags.map((tag) => (
                     <a
-                      key={tag._id}
-                      href={`/tag/${tag._id}`}
-                      className="bg-gradient-to-r from-[#25609A] to-[#749ec9] text-white text-sm rounded-md py-1 px-3 mr-2 mt-2"
+                      key={tag}
+                      href={`/tag/${encodeURIComponent(tag)}`}
+                      className="bg-gradient-to-r from-[#25609A] to-[#749ec9] text-white text-sm rounded-md py-1 px-3 mr-2 mt-2 hover:shadow-lg transition-shadow duration-300"
                     >
-                      #{tag.name}
+                      #{tag}
                     </a>
                   ))}
                 </div>
